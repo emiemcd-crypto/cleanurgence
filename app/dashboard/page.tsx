@@ -1,0 +1,188 @@
+
+'use client'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '../supabase'
+
+export default function Dashboard() {
+  const router = useRouter()
+  const [role, setRole] = useState('')
+  const [nom, setNom] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [dispos, setDispos] = useState<{[key: string]: string}>({})
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/connexion'); return }
+      setNom(user.user_metadata?.nom || 'Utilisateur')
+      setRole(user.user_metadata?.role || '')
+      setLoading(false)
+    }
+    getUser()
+  }, [])
+
+  const handleDeconnexion = async () => {
+    await supabase.auth.signOut()
+    router.push('/')
+  }
+
+  if (loading) return (
+    <div style={{minHeight:'100vh',background:'#FAFAF7',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'sans-serif'}}>
+      <div style={{textAlign:'center'}}>
+        <div style={{fontSize:'2rem',marginBottom:'12px'}}>⏳</div>
+        <div style={{color:'#888'}}>Chargement...</div>
+      </div>
+    </div>
+  )
+
+  // ── NAVBAR ──
+  const Navbar = () => (
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'28px'}}>
+      <h1 style={{fontWeight:'900',fontSize:'1.5rem'}}>Clean<span style={{color:'#FF4D00'}}>Urgence</span></h1>
+      <div style={{display:'flex',alignItems:'center',gap:'12px'}}>
+        <span style={{fontSize:'0.85rem',color:'#555',fontWeight:'600'}}>👋 {nom}</span>
+        <button onClick={handleDeconnexion} style={{background:'none',border:'1px solid #ddd',borderRadius:'8px',padding:'7px 14px',cursor:'pointer',fontSize:'0.82rem',color:'#888'}}>Déconnexion</button>
+      </div>
+    </div>
+  )
+
+  // ── DASHBOARD ENTREPRISE ──
+  if (role === 'entreprise') return (
+    <div style={{minHeight:'100vh',background:'#FAFAF7',fontFamily:'sans-serif',padding:'24px'}}>
+      <div style={{maxWidth:'860px',margin:'0 auto'}}>
+        <Navbar />
+        {!showForm ? (
+          <>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'24px'}}>
+              <div>
+                <h2 style={{fontWeight:'800',fontSize:'1.8rem',marginBottom:'4px'}}>Mes annonces</h2>
+                <p style={{color:'#888',fontSize:'0.85rem'}}>2 annonces actives</p>
+              </div>
+              <button onClick={()=>setShowForm(true)} style={{background:'#FF4D00',color:'white',border:'none',borderRadius:'10px',padding:'12px 22px',fontWeight:'700',fontSize:'0.9rem',cursor:'pointer'}}>+ Nouvelle urgence</button>
+            </div>
+            <div style={{background:'white',border:'1px solid #eee',borderRadius:'16px',padding:'22px',boxShadow:'0 2px 12px rgba(0,0,0,0.06)',marginBottom:'14px'}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'14px'}}>
+                <div>
+                  <div style={{fontSize:'0.7rem',fontWeight:'700',color:'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'6px'}}>🏠 Appartement</div>
+                  <div style={{fontWeight:'700',fontSize:'1.1rem',marginBottom:'4px'}}>Villa Marbella — Remise en état urgente</div>
+                  <div style={{fontSize:'0.82rem',color:'#888'}}>📍 14 bd de la Croisette, Cannes · ⏱ Aujourd'hui avant 18h</div>
+                </div>
+                <span style={{background:'rgba(255,77,0,0.08)',color:'#FF4D00',border:'1px solid rgba(255,77,0,0.2)',padding:'5px 12px',borderRadius:'20px',fontSize:'0.72rem',fontWeight:'600'}}>🔴 Urgent</span>
+              </div>
+              <div style={{background:'#FAFAF7',borderRadius:'10px',padding:'14px',marginBottom:'14px'}}>
+                <div style={{fontSize:'0.75rem',fontWeight:'700',color:'#555',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'10px'}}>👤 Prestataires disponibles (2)</div>
+                {[{initiales:'SB',nom:'Sophie B.',note:'4.9',missions:'47',ville:'Cannes',color:'#FF4D00'},{initiales:'ML',nom:'Marie L.',note:'4.7',missions:'23',ville:'Nice',color:'#6eb5ff'}].map(p=>(
+                  <div key={p.initiales} style={{display:'flex',alignItems:'center',gap:'12px',padding:'10px 0',borderBottom:'1px solid #f0f0f0'}}>
+                    <div style={{width:'36px',height:'36px',background:p.color,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'700',fontSize:'0.85rem',flexShrink:0}}>{p.initiales}</div>
+                    <div style={{flex:1}}><div style={{fontWeight:'600',fontSize:'0.88rem'}}>{p.nom}</div><div style={{fontSize:'0.75rem',color:'#888'}}>⭐ {p.note} · {p.missions} missions · {p.ville}</div></div>
+                    <button style={{background:'#FF4D00',color:'white',border:'none',borderRadius:'8px',padding:'7px 14px',fontWeight:'600',fontSize:'0.78rem',cursor:'pointer'}}>Sélectionner</button>
+                  </div>
+                ))}
+              </div>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <span style={{fontWeight:'800',fontSize:'1.2rem'}}>95 €<span style={{fontWeight:'400',fontSize:'0.75rem',color:'#888',marginLeft:'3px'}}>net</span></span>
+                <span style={{fontSize:'0.75rem',color:'#FF4D00',fontWeight:'600'}}>⚡ Publiée il y a 12 min</span>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div style={{background:'white',borderRadius:'20px',padding:'28px',boxShadow:'0 2px 12px rgba(0,0,0,0.06)'}}>
+            <h3 style={{fontWeight:'800',fontSize:'1.3rem',marginBottom:'4px'}}>Nouvelle annonce urgente</h3>
+            <p style={{color:'#888',fontSize:'0.85rem',marginBottom:'24px'}}>Remplissez les informations pour trouver un prestataire</p>
+            <div style={{marginBottom:'16px'}}>
+              <label style={{fontSize:'0.75rem',fontWeight:'700',color:'#555',textTransform:'uppercase',letterSpacing:'0.06em',display:'block',marginBottom:'6px'}}>Type de lieu</label>
+              <select style={{width:'100%',padding:'11px 14px',borderRadius:'10px',border:'1.5px solid #eee',fontFamily:'sans-serif',fontSize:'0.9rem',outline:'none',background:'#FAFAF7'}}>
+                <option>🏠 Appartement / Villa</option>
+                <option>🏢 Bureaux / Open Space</option>
+                <option>🏨 Chambre d'hôtel</option>
+                <option>🏥 Cabinet médical / Clinique</option>
+                <option>🏬 Commerce / Restaurant</option>
+              </select>
+            </div>
+            <div style={{marginBottom:'16px'}}>
+              <label style={{fontSize:'0.75rem',fontWeight:'700',color:'#555',textTransform:'uppercase',letterSpacing:'0.06em',display:'block',marginBottom:'6px'}}>Adresse</label>
+              <input placeholder="14 boulevard de la Croisette, 06400 Cannes" style={{width:'100%',padding:'11px 14px',borderRadius:'10px',border:'1.5px solid #eee',fontFamily:'sans-serif',fontSize:'0.9rem',outline:'none',boxSizing:'border-box'}}/>
+            </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'14px',marginBottom:'16px'}}>
+              <div>
+                <label style={{fontSize:'0.75rem',fontWeight:'700',color:'#555',textTransform:'uppercase',letterSpacing:'0.06em',display:'block',marginBottom:'6px'}}>Deadline</label>
+                <input type="datetime-local" style={{width:'100%',padding:'11px 14px',borderRadius:'10px',border:'1.5px solid #eee',fontFamily:'sans-serif',fontSize:'0.9rem',outline:'none',boxSizing:'border-box'}}/>
+              </div>
+              <div>
+                <label style={{fontSize:'0.75rem',fontWeight:'700',color:'#555',textTransform:'uppercase',letterSpacing:'0.06em',display:'block',marginBottom:'6px'}}>Rémunération (€ net)</label>
+                <input type="number" placeholder="95" style={{width:'100%',padding:'11px 14px',borderRadius:'10px',border:'1.5px solid #eee',fontFamily:'sans-serif',fontSize:'0.9rem',outline:'none',boxSizing:'border-box'}}/>
+              </div>
+            </div>
+            <div style={{marginBottom:'20px'}}>
+              <label style={{fontSize:'0.75rem',fontWeight:'700',color:'#555',textTransform:'uppercase',letterSpacing:'0.06em',display:'block',marginBottom:'6px'}}>Description</label>
+              <textarea placeholder="Décrivez les tâches à effectuer..." style={{width:'100%',padding:'11px 14px',borderRadius:'10px',border:'1.5px solid #eee',fontFamily:'sans-serif',fontSize:'0.9rem',outline:'none',minHeight:'90px',resize:'vertical',boxSizing:'border-box'}}/>
+            </div>
+            <div style={{display:'flex',gap:'10px'}}>
+              <button onClick={()=>setShowForm(false)} style={{flex:1,padding:'12px',background:'none',border:'1.5px solid #eee',borderRadius:'10px',fontFamily:'sans-serif',fontWeight:'600',cursor:'pointer'}}>Annuler</button>
+              <button onClick={()=>{setShowForm(false);alert('Annonce publiée !')}} style={{flex:2,padding:'12px',background:'#FF4D00',color:'white',border:'none',borderRadius:'10px',fontFamily:'sans-serif',fontWeight:'700',cursor:'pointer'}}>⚡ Publier l'annonce</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+
+  // ── DASHBOARD PRESTATAIRE ──
+  return (
+    <div style={{minHeight:'100vh',background:'#FAFAF7',fontFamily:'sans-serif',padding:'24px'}}>
+      <div style={{maxWidth:'860px',margin:'0 auto'}}>
+        <Navbar />
+        <div style={{background:'white',borderRadius:'16px',padding:'22px',boxShadow:'0 2px 12px rgba(0,0,0,0.06)',marginBottom:'20px',display:'flex',alignItems:'center',gap:'18px'}}>
+          <div style={{width:'60px',height:'60px',background:'linear-gradient(135deg,#FF4D00,#ff8c66)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'800',fontSize:'1.3rem',flexShrink:0}}>
+            {nom.substring(0,2).toUpperCase()}
+          </div>
+          <div style={{flex:1}}>
+            <div style={{fontWeight:'800',fontSize:'1.2rem'}}>{nom}</div>
+            <div style={{color:'#F5A623',fontSize:'0.85rem',marginBottom:'6px'}}>⭐⭐⭐⭐⭐ Nouveau prestataire</div>
+            <div style={{display:'flex',gap:'20px'}}>
+              <div><div style={{fontWeight:'800',fontSize:'1.1rem',color:'#FF4D00'}}>0</div><div style={{fontSize:'0.7rem',color:'#888'}}>missions</div></div>
+              <div><div style={{fontWeight:'800',fontSize:'1.1rem',color:'#FF4D00'}}>—</div><div style={{fontSize:'0.7rem',color:'#888'}}>note moy.</div></div>
+              <div><div style={{fontWeight:'800',fontSize:'1.1rem',color:'#FF4D00'}}>0 €</div><div style={{fontSize:'0.7rem',color:'#888'}}>ce mois</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'16px'}}>
+          <h2 style={{fontWeight:'800',fontSize:'1.5rem'}}>Missions disponibles</h2>
+          <span style={{fontSize:'0.82rem',color:'#888'}}>3 annonces près de vous</span>
+        </div>
+
+        {[
+          {id:'m1',titre:'Villa Marbella — Remise en état urgente',type:'🏠 Appartement',client:'Conciergerie Azur',adresse:'2,3 km · Cannes',heure:'il y a 12 min',prix:'95',urgence:'🔴 Urgent',urgenceColor:'#FF4D00',urgenceBg:'rgba(255,77,0,0.08)'},
+          {id:'m2',titre:'Open Space Republique — Nettoyage complet',type:'🏢 Bureaux',client:'Groupe Immobilier Paris Est',adresse:'Paris 11e',heure:'il y a 1h',prix:'140',urgence:'🟡 Normal',urgenceColor:'#F5A623',urgenceBg:'rgba(245,166,35,0.1)'},
+          {id:'m3',titre:'Hôtel Lumière — 6 chambres départ',type:'🏨 Hôtel',client:'Hôtel Lumière Boutique',adresse:'Lyon 2e',heure:'il y a 2h',prix:'115',urgence:'🟢 Planifié',urgenceColor:'#0CB86A',urgenceBg:'rgba(12,184,106,0.1)'},
+        ].map(m=>(
+          <div key={m.id} style={{background:'white',border:'1px solid #eee',borderRadius:'16px',padding:'20px',boxShadow:'0 2px 12px rgba(0,0,0,0.06)',marginBottom:'14px'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'10px'}}>
+              <div>
+                <div style={{fontSize:'0.7rem',fontWeight:'700',color:'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'4px'}}>{m.type} · {m.client}</div>
+                <div style={{fontWeight:'700',fontSize:'1rem',marginBottom:'3px'}}>{m.titre}</div>
+                <div style={{fontSize:'0.8rem',color:'#888'}}>📍 {m.adresse}</div>
+              </div>
+              <span style={{background:m.urgenceBg,color:m.urgenceColor,padding:'5px 12px',borderRadius:'20px',fontSize:'0.72rem',fontWeight:'600',whiteSpace:'nowrap'}}>{m.urgence}</span>
+            </div>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:'12px',borderTop:'1px solid #f0f0f0',marginBottom:'12px'}}>
+              <span style={{fontWeight:'800',fontSize:'1.2rem'}}>{m.prix} €<span style={{fontWeight:'400',fontSize:'0.75rem',color:'#888',marginLeft:'3px'}}>net</span></span>
+              <span style={{fontSize:'0.75rem',color:m.urgenceColor,fontWeight:'600'}}>⚡ {m.heure}</span>
+            </div>
+            <div style={{display:'flex',gap:'10px'}}>
+              <button onClick={()=>setDispos(d=>({...d,[m.id]:'oui'}))} style={{flex:1,padding:'11px',borderRadius:'10px',border:'2px solid #0CB86A',background:dispos[m.id]==='oui'?'#0CB86A':'rgba(12,184,106,0.08)',color:dispos[m.id]==='oui'?'white':'#0CB86A',fontWeight:'700',cursor:'pointer',fontSize:'0.9rem'}}>
+                {dispos[m.id]==='oui'?'✓ Disponible confirmé':'✓ Je suis disponible'}
+              </button>
+              <button onClick={()=>setDispos(d=>({...d,[m.id]:'non'}))} style={{flex:1,padding:'11px',borderRadius:'10px',border:'2px solid #E8334A',background:dispos[m.id]==='non'?'#E8334A':'rgba(232,51,74,0.08)',color:dispos[m.id]==='non'?'white':'#E8334A',fontWeight:'700',cursor:'pointer',fontSize:'0.9rem'}}>
+                {dispos[m.id]==='non'?'✗ Refusé':'✗ Pas disponible'}
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
