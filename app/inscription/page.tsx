@@ -18,7 +18,7 @@ export default function Inscription() {
     setLoading(true)
     setErreur('')
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password: motdepasse,
         options: {
@@ -29,8 +29,19 @@ export default function Inscription() {
           }
         }
       })
-      if (error) throw error
-      router.push('/connexion')
+    if (error) throw error
+
+if (data.user) {
+  const { error: profileError } = await supabase.from('profiles').insert({
+    id: data.user.id,
+    role: role.toLowerCase(),
+    nom,
+    siret: siret || null,
+  })
+  if (profileError) throw profileError
+}
+
+router.push('/connexion')
     } catch (err: unknown) {
       if (err instanceof Error) setErreur(err.message)
       else setErreur('Une erreur est survenue')
