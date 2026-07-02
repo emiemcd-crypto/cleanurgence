@@ -7,9 +7,11 @@ export default function Dashboard() {
   const router = useRouter()
   const [role, setRole] = useState('')
   const [nom, setNom] = useState('')
+  const [userId, setUserId] = useState('')
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [dispos, setDispos] = useState<{[key: string]: string}>({})
+  const [annonces, setAnnonces] = useState<any[]>([])
 
   const [titre, setTitre] = useState('')
   const [typeLieu, setTypeLieu] = useState('🏠 Appartement / Villa')
@@ -26,10 +28,24 @@ export default function Dashboard() {
       if (!user) { router.push('/connexion'); return }
       setNom(user.user_metadata?.nom || 'Utilisateur')
       setRole(user.user_metadata?.role || '')
+      setUserId(user.id)
       setLoading(false)
     }
     getUser()
   }, [])
+
+  useEffect(() => {
+    if (!userId || role !== 'entreprise') return
+    const fetchAnnonces = async () => {
+      const { data, error } = await supabase
+        .from('annonces')
+        .select('*')
+        .eq('entreprise_id', userId)
+        .order('created_at', { ascending: false })
+      if (!error && data) setAnnonces(data)
+    }
+    fetchAnnonces()
+  }, [userId, role])
 
   const handleDeconnexion = async () => {
     await supabase.auth.signOut()
@@ -54,6 +70,14 @@ export default function Dashboard() {
         statut: 'en_attente',
       })
       if (error) throw error
+
+      // Recharger les annonces
+      const { data } = await supabase
+        .from('annonces')
+        .select('*')
+        .eq('entreprise_id', user.id)
+        .order('created_at', { ascending: false })
+      if (data) setAnnonces(data)
 
       setShowForm(false)
       setTitre(''); setAdresse(''); setDeadline(''); setRemuneration(''); setDescription('')
@@ -95,34 +119,39 @@ export default function Dashboard() {
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'24px'}}>
               <div>
                 <h2 style={{fontWeight:'800',fontSize:'1.8rem',marginBottom:'4px'}}>Mes annonces</h2>
-                <p style={{color:'#888',fontSize:'0.85rem'}}>2 annonces actives</p>
+                <p style={{color:'#888',fontSize:'0.85rem'}}>{annonces.length} annonce{annonces.length > 1 ? 's' : ''} publiée{annonces.length > 1 ? 's' : ''}</p>
               </div>
               <button onClick={()=>setShowForm(true)} style={{background:'#FF4D00',color:'white',border:'none',borderRadius:'10px',padding:'12px 22px',fontWeight:'700',fontSize:'0.9rem',cursor:'pointer'}}>+ Nouvelle urgence</button>
             </div>
-            <div style={{background:'white',border:'1px solid #eee',borderRadius:'16px',padding:'22px',boxShadow:'0 2px 12px rgba(0,0,0,0.06)',marginBottom:'14px'}}>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'14px'}}>
-                <div>
-                  <div style={{fontSize:'0.7rem',fontWeight:'700',color:'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'6px'}}>🏠 Appartement</div>
-                  <div style={{fontWeight:'700',fontSize:'1.1rem',marginBottom:'4px'}}>Villa Marbella — Remise en état urgente</div>
-                  <div style={{fontSize:'0.82rem',color:'#888'}}>📍 14 bd de la Croisette, Cannes · ⏱ Aujourd'hui avant 18h</div>
-                </div>
-                <span style={{background:'rgba(255,77,0,0.08)',color:'#FF4D00',border:'1px solid rgba(255,77,0,0.2)',padding:'5px 12px',borderRadius:'20px',fontSize:'0.72rem',fontWeight:'600'}}>🔴 Urgent</span>
+
+            {annonces.length === 0 ? (
+              <div style={{background:'white',borderRadius:'16px',padding:'40px',textAlign:'center',boxShadow:'0 2px 12px rgba(0,0,0,0.06)'}}>
+                <div style={{fontSize:'2.5rem',marginBottom:'12px'}}>📋</div>
+                <div style={{fontWeight:'700',fontSize:'1.1rem',marginBottom:'8px'}}>Aucune annonce pour l'instant</div>
+                <div style={{color:'#888',fontSize:'0.85rem',marginBottom:'20px'}}>Publiez votre première mission urgente</div>
+                <button onClick={()=>setShowForm(true)} style={{background:'#FF4D00',color:'white',border:'none',borderRadius:'10px',padding:'12px 22px',fontWeight:'700',cursor:'pointer'}}>+ Publier une urgence</button>
               </div>
-              <div style={{background:'#FAFAF7',borderRadius:'10px',padding:'14px',marginBottom:'14px'}}>
-                <div style={{fontSize:'0.75rem',fontWeight:'700',color:'#555',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'10px'}}>👤 Prestataires disponibles (2)</div>
-                {[{initiales:'SB',nom:'Sophie B.',note:'4.9',missions:'47',ville:'Cannes',color:'#FF4D00'},{initiales:'ML',nom:'Marie L.',note:'4.7',missions:'23',ville:'Nice',color:'#6eb5ff'}].map(p=>(
-                  <div key={p.initiales} style={{display:'flex',alignItems:'center',gap:'12px',padding:'10px 0',borderBottom:'1px solid #f0f0f0'}}>
-                    <div style={{width:'36px',height:'36px',background:p.color,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'700',fontSize:'0.85rem',flexShrink:0}}>{p.initiales}</div>
-                    <div style={{flex:1}}><div style={{fontWeight:'600',fontSize:'0.88rem'}}>{p.nom}</div><div style={{fontSize:'0.75rem',color:'#888'}}>⭐ {p.note} · {p.missions} missions · {p.ville}</div></div>
-                    <button style={{background:'#FF4D00',color:'white',border:'none',borderRadius:'8px',padding:'7px 14px',fontWeight:'600',fontSize:'0.78rem',cursor:'pointer'}}>Sélectionner</button>
+            ) : (
+              annonces.map(annonce => (
+                <div key={annonce.id} style={{background:'white',border:'1px solid #eee',borderRadius:'16px',padding:'22px',boxShadow:'0 2px 12px rgba(0,0,0,0.06)',marginBottom:'14px'}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'14px'}}>
+                    <div>
+                      <div style={{fontSize:'0.7rem',fontWeight:'700',color:'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'6px'}}>{annonce.type_lieu}</div>
+                      <div style={{fontWeight:'700',fontSize:'1.1rem',marginBottom:'4px'}}>{annonce.titre}</div>
+                      <div style={{fontSize:'0.82rem',color:'#888'}}>📍 {annonce.adresse} · ⏱ {new Date(annonce.deadline).toLocaleDateString('fr-FR')}</div>
+                    </div>
+                    <span style={{background:'rgba(255,77,0,0.08)',color:'#FF4D00',border:'1px solid rgba(255,77,0,0.2)',padding:'5px 12px',borderRadius:'20px',fontSize:'0.72rem',fontWeight:'600'}}>{annonce.statut === 'en_attente' ? '🟡 En attente' : '🟢 Pourvue'}</span>
                   </div>
-                ))}
-              </div>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                <span style={{fontWeight:'800',fontSize:'1.2rem'}}>95 €<span style={{fontWeight:'400',fontSize:'0.75rem',color:'#888',marginLeft:'3px'}}>net</span></span>
-                <span style={{fontSize:'0.75rem',color:'#FF4D00',fontWeight:'600'}}>⚡ Publiée il y a 12 min</span>
-              </div>
-            </div>
+                  {annonce.description && (
+                    <div style={{background:'#FAFAF7',borderRadius:'10px',padding:'12px',marginBottom:'14px',fontSize:'0.85rem',color:'#555'}}>{annonce.description}</div>
+                  )}
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                    <span style={{fontWeight:'800',fontSize:'1.2rem'}}>{annonce.remuneration} €<span style={{fontWeight:'400',fontSize:'0.75rem',color:'#888',marginLeft:'3px'}}>net</span></span>
+                    <span style={{fontSize:'0.75rem',color:'#888',fontWeight:'600'}}>📅 {new Date(annonce.created_at).toLocaleDateString('fr-FR')}</span>
+                  </div>
+                </div>
+              ))
+            )}
           </>
         ) : (
           <div style={{background:'white',borderRadius:'20px',padding:'28px',boxShadow:'0 2px 12px rgba(0,0,0,0.06)'}}>
@@ -206,7 +235,7 @@ export default function Dashboard() {
 
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'16px'}}>
           <h2 style={{fontWeight:'800',fontSize:'1.5rem'}}>Missions disponibles</h2>
-          <span style={{fontSize:'0.82rem',color:'#888'}}>3 annonces près de vous</span>
+          <span style={{fontSize:'0.82rem',color:'#888'}}>Bientôt connecté à Supabase</span>
         </div>
 
         {[
