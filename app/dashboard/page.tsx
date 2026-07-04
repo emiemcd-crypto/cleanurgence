@@ -35,14 +35,22 @@ export default function Dashboard() {
   }, [])
 
   useEffect(() => {
-    if (!userId || role !== 'entreprise') return
+    if (!userId || !role) return
     const fetchAnnonces = async () => {
-      const { data, error } = await supabase
-        .from('annonces')
-        .select('*')
-        .eq('entreprise_id', userId)
-        .order('created_at', { ascending: false })
-      if (!error && data) setAnnonces(data)
+      if (role === 'entreprise') {
+        const { data, error } = await supabase
+          .from('annonces')
+          .select('*')
+          .eq('entreprise_id', userId)
+          .order('created_at', { ascending: false })
+        if (!error && data) setAnnonces(data)
+      } else if (role === 'prestataire') {
+        const { data, error } = await supabase
+          .from('annonces')
+          .select('*')
+          .order('created_at', { ascending: false })
+        if (!error && data) setAnnonces(data)
+      }
     }
     fetchAnnonces()
   }, [userId, role])
@@ -71,7 +79,6 @@ export default function Dashboard() {
       })
       if (error) throw error
 
-      // Recharger les annonces
       const { data } = await supabase
         .from('annonces')
         .select('*')
@@ -140,7 +147,7 @@ export default function Dashboard() {
                       <div style={{fontWeight:'700',fontSize:'1.1rem',marginBottom:'4px'}}>{annonce.titre}</div>
                       <div style={{fontSize:'0.82rem',color:'#888'}}>📍 {annonce.adresse} · ⏱ {new Date(annonce.deadline).toLocaleDateString('fr-FR')}</div>
                     </div>
-                    <span style={{background:'rgba(255,77,0,0.08)',color:'#FF4D00',border:'1px solid rgba(255,77,0,0.2)',padding:'5px 12px',borderRadius:'20px',fontSize:'0.72rem',fontWeight:'600'}}>{annonce.statut === 'en_attente' ? '🟡 En attente' : '🟢 Pourvue'}</span>
+                    <span style={{background:'rgba(255,165,0,0.08)',color:'#F5A623',border:'1px solid rgba(255,165,0,0.2)',padding:'5px 12px',borderRadius:'20px',fontSize:'0.72rem',fontWeight:'600'}}>{annonce.statut === 'en_attente' ? '🟡 En attente' : '🟢 Pourvue'}</span>
                   </div>
                   {annonce.description && (
                     <div style={{background:'#FAFAF7',borderRadius:'10px',padding:'12px',marginBottom:'14px',fontSize:'0.85rem',color:'#555'}}>{annonce.description}</div>
@@ -224,7 +231,7 @@ export default function Dashboard() {
           </div>
           <div style={{flex:1}}>
             <div style={{fontWeight:'800',fontSize:'1.2rem'}}>{nom}</div>
-            <div style={{color:'#F5A623',fontSize:'0.85rem',marginBottom:'6px'}}>⭐⭐⭐⭐⭐ Nouveau prestataire</div>
+            <div style={{color:'#F5A623',fontSize:'0.85rem',marginBottom:'6px'}}>⭐ Nouveau prestataire</div>
             <div style={{display:'flex',gap:'20px'}}>
               <div><div style={{fontWeight:'800',fontSize:'1.1rem',color:'#FF4D00'}}>0</div><div style={{fontSize:'0.7rem',color:'#888'}}>missions</div></div>
               <div><div style={{fontWeight:'800',fontSize:'1.1rem',color:'#FF4D00'}}>—</div><div style={{fontSize:'0.7rem',color:'#888'}}>note moy.</div></div>
@@ -235,37 +242,41 @@ export default function Dashboard() {
 
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'16px'}}>
           <h2 style={{fontWeight:'800',fontSize:'1.5rem'}}>Missions disponibles</h2>
-          <span style={{fontSize:'0.82rem',color:'#888'}}>Bientôt connecté à Supabase</span>
+          <span style={{fontSize:'0.82rem',color:'#888'}}>{annonces.length} annonce{annonces.length > 1 ? 's' : ''} disponible{annonces.length > 1 ? 's' : ''}</span>
         </div>
 
-        {[
-          {id:'m1',titre:'Villa Marbella — Remise en état urgente',type:'🏠 Appartement',client:'Conciergerie Azur',adresse:'2,3 km · Cannes',heure:'il y a 12 min',prix:'95',urgence:'🔴 Urgent',urgenceColor:'#FF4D00',urgenceBg:'rgba(255,77,0,0.08)'},
-          {id:'m2',titre:'Open Space Republique — Nettoyage complet',type:'🏢 Bureaux',client:'Groupe Immobilier Paris Est',adresse:'Paris 11e',heure:'il y a 1h',prix:'140',urgence:'🟡 Normal',urgenceColor:'#F5A623',urgenceBg:'rgba(245,166,35,0.1)'},
-          {id:'m3',titre:'Hôtel Lumière — 6 chambres départ',type:'🏨 Hôtel',client:'Hôtel Lumière Boutique',adresse:'Lyon 2e',heure:'il y a 2h',prix:'115',urgence:'🟢 Planifié',urgenceColor:'#0CB86A',urgenceBg:'rgba(12,184,106,0.1)'},
-        ].map(m=>(
-          <div key={m.id} style={{background:'white',border:'1px solid #eee',borderRadius:'16px',padding:'20px',boxShadow:'0 2px 12px rgba(0,0,0,0.06)',marginBottom:'14px'}}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'10px'}}>
-              <div>
-                <div style={{fontSize:'0.7rem',fontWeight:'700',color:'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'4px'}}>{m.type} · {m.client}</div>
-                <div style={{fontWeight:'700',fontSize:'1rem',marginBottom:'3px'}}>{m.titre}</div>
-                <div style={{fontSize:'0.8rem',color:'#888'}}>📍 {m.adresse}</div>
-              </div>
-              <span style={{background:m.urgenceBg,color:m.urgenceColor,padding:'5px 12px',borderRadius:'20px',fontSize:'0.72rem',fontWeight:'600',whiteSpace:'nowrap'}}>{m.urgence}</span>
-            </div>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:'12px',borderTop:'1px solid #f0f0f0',marginBottom:'12px'}}>
-              <span style={{fontWeight:'800',fontSize:'1.2rem'}}>{m.prix} €<span style={{fontWeight:'400',fontSize:'0.75rem',color:'#888',marginLeft:'3px'}}>net</span></span>
-              <span style={{fontSize:'0.75rem',color:m.urgenceColor,fontWeight:'600'}}>⚡ {m.heure}</span>
-            </div>
-            <div style={{display:'flex',gap:'10px'}}>
-              <button onClick={()=>setDispos(d=>({...d,[m.id]:'oui'}))} style={{flex:1,padding:'11px',borderRadius:'10px',border:'2px solid #0CB86A',background:dispos[m.id]==='oui'?'#0CB86A':'rgba(12,184,106,0.08)',color:dispos[m.id]==='oui'?'white':'#0CB86A',fontWeight:'700',cursor:'pointer',fontSize:'0.9rem'}}>
-                {dispos[m.id]==='oui'?'✓ Disponible confirmé':'✓ Je suis disponible'}
-              </button>
-              <button onClick={()=>setDispos(d=>({...d,[m.id]:'non'}))} style={{flex:1,padding:'11px',borderRadius:'10px',border:'2px solid #E8334A',background:dispos[m.id]==='non'?'#E8334A':'rgba(232,51,74,0.08)',color:dispos[m.id]==='non'?'white':'#E8334A',fontWeight:'700',cursor:'pointer',fontSize:'0.9rem'}}>
-                {dispos[m.id]==='non'?'✗ Refusé':'✗ Pas disponible'}
-              </button>
-            </div>
+        {annonces.length === 0 ? (
+          <div style={{background:'white',borderRadius:'16px',padding:'40px',textAlign:'center',boxShadow:'0 2px 12px rgba(0,0,0,0.06)'}}>
+            <div style={{fontSize:'2.5rem',marginBottom:'12px'}}>🔍</div>
+            <div style={{fontWeight:'700',fontSize:'1.1rem',marginBottom:'8px'}}>Aucune mission disponible</div>
+            <div style={{color:'#888',fontSize:'0.85rem'}}>Revenez bientôt pour voir les nouvelles missions</div>
           </div>
-        ))}
+        ) : (
+          annonces.map(m => (
+            <div key={m.id} style={{background:'white',border:'1px solid #eee',borderRadius:'16px',padding:'20px',boxShadow:'0 2px 12px rgba(0,0,0,0.06)',marginBottom:'14px'}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'10px'}}>
+                <div>
+                  <div style={{fontSize:'0.7rem',fontWeight:'700',color:'#888',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:'4px'}}>{m.type_lieu}</div>
+                  <div style={{fontWeight:'700',fontSize:'1rem',marginBottom:'3px'}}>{m.titre}</div>
+                  <div style={{fontSize:'0.8rem',color:'#888'}}>📍 {m.adresse}</div>
+                </div>
+                <span style={{background:'rgba(255,77,0,0.08)',color:'#FF4D00',padding:'5px 12px',borderRadius:'20px',fontSize:'0.72rem',fontWeight:'600',whiteSpace:'nowrap'}}>🔴 Urgent</span>
+              </div>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',paddingTop:'12px',borderTop:'1px solid #f0f0f0',marginBottom:'12px'}}>
+                <span style={{fontWeight:'800',fontSize:'1.2rem'}}>{m.remuneration} €<span style={{fontWeight:'400',fontSize:'0.75rem',color:'#888',marginLeft:'3px'}}>net</span></span>
+                <span style={{fontSize:'0.75rem',color:'#888',fontWeight:'600'}}>⏱ {new Date(m.deadline).toLocaleDateString('fr-FR')}</span>
+              </div>
+              <div style={{display:'flex',gap:'10px'}}>
+                <button onClick={()=>setDispos(d=>({...d,[m.id]:'oui'}))} style={{flex:1,padding:'11px',borderRadius:'10px',border:'2px solid #0CB86A',background:dispos[m.id]==='oui'?'#0CB86A':'rgba(12,184,106,0.08)',color:dispos[m.id]==='oui'?'white':'#0CB86A',fontWeight:'700',cursor:'pointer',fontSize:'0.9rem'}}>
+                  {dispos[m.id]==='oui'?'✓ Disponible confirmé':'✓ Je suis disponible'}
+                </button>
+                <button onClick={()=>setDispos(d=>({...d,[m.id]:'non'}))} style={{flex:1,padding:'11px',borderRadius:'10px',border:'2px solid #E8334A',background:dispos[m.id]==='non'?'#E8334A':'rgba(232,51,74,0.08)',color:dispos[m.id]==='non'?'white':'#E8334A',fontWeight:'700',cursor:'pointer',fontSize:'0.9rem'}}>
+                  {dispos[m.id]==='non'?'✗ Refusé':'✗ Pas disponible'}
+                </button>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   )
