@@ -12,6 +12,7 @@ export default function Dashboard() {
   const [showForm, setShowForm] = useState(false)
   const [dispos, setDispos] = useState<{[key: string]: string}>({})
   const [annonces, setAnnonces] = useState<any[]>([])
+  const [reponses, setReponses] = useState<{[key: string]: any[]}>({})
 
   const [titre, setTitre] = useState('')
   const [typeLieu, setTypeLieu] = useState('🏠 Appartement / Villa')
@@ -43,7 +44,20 @@ export default function Dashboard() {
           .select('*')
           .eq('entreprise_id', userId)
           .order('created_at', { ascending: false })
-        if (!error && data) setAnnonces(data)
+        if (!error && data) {
+          setAnnonces(data)
+          // Charger les réponses pour chaque annonce
+          const reponsesMap: {[key: string]: any[]} = {}
+          for (const annonce of data) {
+            const { data: reps } = await supabase
+              .from('reponses')
+              .select('*, profiles(nom)')
+              .eq('annonce_id', annonce.id)
+              .eq('disponible', true)
+            if (reps) reponsesMap[annonce.id] = reps
+          }
+          setReponses(reponsesMap)
+        }
       } else if (role === 'prestataire') {
         const { data, error } = await supabase
           .from('annonces')
@@ -97,6 +111,33 @@ export default function Dashboard() {
     }
   }
 
+  const handleDispo = async (annonceId: string, disponible: boolean) => {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  const { data: existing } = await supabase
+    .from('reponses')
+    .select('id')
+    .eq('annonce_id', annonceId)
+    .eq('prestataire_id', user.id)
+    .single()
+
+  if (existing) {
+    await supabase
+      .from('reponses')
+      .update({ disponible })
+      .eq('id', existing.id)
+  } else {
+    await supabase.from('reponses').insert({
+      annonce_id: annonceId,
+      prestataire_id: user.id,
+      disponible,
+    })
+  }
+
+  setDispos(d => ({...d, [annonceId]: disponible ? 'oui' : 'non'}))
+}
+
   if (loading) return (
     <div style={{minHeight:'100vh',background:'#FAFAF7',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'sans-serif'}}>
       <div style={{textAlign:'center'}}>
@@ -149,6 +190,32 @@ export default function Dashboard() {
                     </div>
                     <span style={{background:'rgba(255,165,0,0.08)',color:'#F5A623',border:'1px solid rgba(255,165,0,0.2)',padding:'5px 12px',borderRadius:'20px',fontSize:'0.72rem',fontWeight:'600'}}>{annonce.statut === 'en_attente' ? '🟡 En attente' : '🟢 Pourvue'}</span>
                   </div>
+
+                  {/* Prestataires disponibles */}
+                  <div style={{background:'#FAFAF7',borderRadius:'10px',padding:'14px',marginBottom:'14px'}}>
+                    {reponses[annonce.id] && reponses[annonce.id].length > 0 ? (
+                      <>
+                        <div style={{fontSize:'0.75rem',fontWeight:'700',color:'#555',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:'10px'}}>
+                          👤 Prestataires disponibles ({reponses[annonce.id].length})
+                        </div>
+                        {reponses[annonce.id].map((rep, i) => (
+                          <div key={i} style={{display:'flex',alignItems:'center',gap:'12px',padding:'10px 0',borderBottom: i < reponses[annonce.id].length - 1 ? '1px solid #eee' : 'none'}}>
+                            <div style={{width:'36px',height:'36px',background:'#FF4D00',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'700',fontSize:'0.85rem',flexShrink:0}}>
+                              {rep.profiles?.nom?.substring(0,2).toUpperCase() || '?'}
+                            </div>
+                            <div style={{flex:1}}>
+                              <div style={{fontWeight:'600',fontSize:'0.88rem'}}>{rep.profiles?.nom || 'Prestataire'}</div>
+                              <div style={{fontSize:'0.75rem',color:'#0CB86A'}}>✓ Disponible</div>
+                            </div>
+                            <button style={{background:'#FF4D00',color:'white',border:'none',borderRadius:'8px',padding:'7px 14px',fontWeight:'600',fontSize:'0.78rem',cursor:'pointer'}}>Sélectionner</button>
+                          </div>
+                        ))}
+                      </>
+                    ) : (
+                      <div style={{fontSize:'0.75rem',fontWeight:'700',color:'#555',textTransform:'uppercase',letterSpacing:'0.06em'}}>⏳ En attente de réponses...</div>
+                    )}
+                  </div>
+
                   {annonce.description && (
                     <div style={{background:'#FAFAF7',borderRadius:'10px',padding:'12px',marginBottom:'14px',fontSize:'0.85rem',color:'#555'}}>{annonce.description}</div>
                   )}
@@ -267,10 +334,10 @@ export default function Dashboard() {
                 <span style={{fontSize:'0.75rem',color:'#888',fontWeight:'600'}}>⏱ {new Date(m.deadline).toLocaleDateString('fr-FR')}</span>
               </div>
               <div style={{display:'flex',gap:'10px'}}>
-                <button onClick={()=>setDispos(d=>({...d,[m.id]:'oui'}))} style={{flex:1,padding:'11px',borderRadius:'10px',border:'2px solid #0CB86A',background:dispos[m.id]==='oui'?'#0CB86A':'rgba(12,184,106,0.08)',color:dispos[m.id]==='oui'?'white':'#0CB86A',fontWeight:'700',cursor:'pointer',fontSize:'0.9rem'}}>
+                <button onClick={()=>handleDispo(m.id, true)} style={{flex:1,padding:'11px',borderRadius:'10px',border:'2px solid #0CB86A',background:dispos[m.id]==='oui'?'#0CB86A':'rgba(12,184,106,0.08)',color:dispos[m.id]==='oui'?'white':'#0CB86A',fontWeight:'700',cursor:'pointer',fontSize:'0.9rem'}}>
                   {dispos[m.id]==='oui'?'✓ Disponible confirmé':'✓ Je suis disponible'}
                 </button>
-                <button onClick={()=>setDispos(d=>({...d,[m.id]:'non'}))} style={{flex:1,padding:'11px',borderRadius:'10px',border:'2px solid #E8334A',background:dispos[m.id]==='non'?'#E8334A':'rgba(232,51,74,0.08)',color:dispos[m.id]==='non'?'white':'#E8334A',fontWeight:'700',cursor:'pointer',fontSize:'0.9rem'}}>
+                <button onClick={()=>handleDispo(m.id, false)} style={{flex:1,padding:'11px',borderRadius:'10px',border:'2px solid #E8334A',background:dispos[m.id]==='non'?'#E8334A':'rgba(232,51,74,0.08)',color:dispos[m.id]==='non'?'white':'#E8334A',fontWeight:'700',cursor:'pointer',fontSize:'0.9rem'}}>
                   {dispos[m.id]==='non'?'✗ Refusé':'✗ Pas disponible'}
                 </button>
               </div>
