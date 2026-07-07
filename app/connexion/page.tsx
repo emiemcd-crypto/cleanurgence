@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../supabase'
 
@@ -9,6 +9,14 @@ export default function Connexion() {
   const [motdepasse, setMotdepasse] = useState('')
   const [loading, setLoading] = useState(false)
   const [erreur, setErreur] = useState('')
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) router.push('/dashboard')
+    }
+    checkUser()
+  }, [])
 
   const handleConnexion = async () => {
     setLoading(true)
@@ -44,31 +52,15 @@ export default function Connexion() {
 
         <div style={{marginBottom:'14px'}}>
           <label style={{fontSize:'0.75rem',fontWeight:'700',color:'#555',textTransform:'uppercase',letterSpacing:'0.06em',display:'block',marginBottom:'6px'}}>Email</label>
-          <input
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            type="email"
-            placeholder="votre@email.com"
-            style={{width:'100%',padding:'12px 14px',borderRadius:'10px',border:'1.5px solid #eee',fontFamily:'sans-serif',fontSize:'0.9rem',outline:'none',boxSizing:'border-box'}}
-          />
+          <input value={email} onChange={e=>setEmail(e.target.value)} type="email" placeholder="votre@email.com" style={{width:'100%',padding:'12px 14px',borderRadius:'10px',border:'1.5px solid #eee',fontFamily:'sans-serif',fontSize:'0.9rem',outline:'none',boxSizing:'border-box'}}/>
         </div>
 
         <div style={{marginBottom:'24px'}}>
           <label style={{fontSize:'0.75rem',fontWeight:'700',color:'#555',textTransform:'uppercase',letterSpacing:'0.06em',display:'block',marginBottom:'6px'}}>Mot de passe</label>
-          <input
-            value={motdepasse}
-            onChange={e => setMotdepasse(e.target.value)}
-            type="password"
-            placeholder="Votre mot de passe"
-            style={{width:'100%',padding:'12px 14px',borderRadius:'10px',border:'1.5px solid #eee',fontFamily:'sans-serif',fontSize:'0.9rem',outline:'none',boxSizing:'border-box'}}
-          />
+          <input value={motdepasse} onChange={e=>setMotdepasse(e.target.value)} type="password" placeholder="Votre mot de passe" style={{width:'100%',padding:'12px 14px',borderRadius:'10px',border:'1.5px solid #eee',fontFamily:'sans-serif',fontSize:'0.9rem',outline:'none',boxSizing:'border-box'}}/>
         </div>
 
-        <button
-          onClick={handleConnexion}
-          disabled={loading}
-          style={{width:'100%',padding:'14px',background:loading?'#ddd':'#FF4D00',color:'white',border:'none',borderRadius:'12px',fontFamily:'sans-serif',fontWeight:'700',fontSize:'1rem',cursor:loading?'not-allowed':'pointer',marginBottom:'12px'}}
-        >
+        <button onClick={handleConnexion} disabled={loading} style={{width:'100%',padding:'14px',background:loading?'#ddd':'#FF4D00',color:'white',border:'none',borderRadius:'12px',fontFamily:'sans-serif',fontWeight:'700',fontSize:'1rem',cursor:loading?'not-allowed':'pointer',marginBottom:'12px'}}>
           {loading ? '⏳ Connexion...' : 'Se connecter'}
         </button>
 

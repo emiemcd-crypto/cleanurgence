@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../supabase'
 
@@ -13,6 +13,14 @@ export default function Inscription() {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [erreur, setErreur] = useState('')
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) router.push('/dashboard')
+    }
+    checkUser()
+  }, [])
 
   const handleSubmit = async () => {
     setLoading(true)
@@ -29,19 +37,19 @@ export default function Inscription() {
           }
         }
       })
-    if (error) throw error
+      if (error) throw error
 
-if (data.user) {
-  const { error: profileError } = await supabase.from('profiles').insert({
-    id: data.user.id,
-    role: role.toLowerCase(),
-    nom,
-    siret: siret || null,
-  })
-  if (profileError) throw profileError
-}
+      if (data.user) {
+        const { error: profileError } = await supabase.from('profiles').insert({
+          id: data.user.id,
+          role: role.toLowerCase(),
+          nom,
+          siret: siret || null,
+        })
+        if (profileError) throw profileError
+      }
 
-router.push('/connexion')
+      router.push('/connexion')
     } catch (err: unknown) {
       if (err instanceof Error) setErreur(err.message)
       else setErreur('Une erreur est survenue')
