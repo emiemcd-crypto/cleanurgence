@@ -127,17 +127,17 @@ export default function Dashboard() {
   )
 
   const Navbar = () => (
-    <div style={{background:'white',borderBottom:'1px solid #E8F0E8',padding:'0 32px',height:'64px',display:'flex',alignItems:'center',justifyContent:'space-between',position:'sticky',top:0,zIndex:100,boxShadow:'0 1px 8px rgba(26,122,74,0.06)'}}>
-      <div style={{fontWeight:'900',fontSize:'1.4rem',color:TEXTE}}>Clean<span style={{color:VERT}}>Urgence</span></div>
-      <div style={{display:'flex',alignItems:'center',gap:'16px'}}>
-        <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
-          <div style={{width:'34px',height:'34px',background:VERT,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'700',fontSize:'0.8rem'}}>
+    <div style={{background:'white',borderBottom:'1px solid #E8F0E8',padding:'10px clamp(14px,4vw,32px)',minHeight:'64px',display:'flex',alignItems:'center',justifyContent:'space-between',position:'sticky',top:0,zIndex:100,boxShadow:'0 1px 8px rgba(26,122,74,0.06)',flexWrap:'wrap',gap:'10px'}}>
+      <div style={{fontWeight:'900',fontSize:'clamp(1.05rem,4vw,1.4rem)',color:TEXTE,whiteSpace:'nowrap'}}>Clean<span style={{color:VERT}}>Urgence</span></div>
+      <div style={{display:'flex',alignItems:'center',gap:'clamp(6px,2vw,16px)',flexWrap:'wrap'}}>
+        <div style={{display:'flex',alignItems:'center',gap:'6px'}}>
+          <div style={{width:'30px',height:'30px',background:VERT,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',color:'white',fontWeight:'700',fontSize:'0.72rem',flexShrink:0}}>
             {nom.substring(0,2).toUpperCase()}
           </div>
-          <span style={{fontSize:'0.88rem',color:TEXTE,fontWeight:'600'}}>{nom}</span>
+          <span style={{fontSize:'clamp(0.72rem,2.2vw,0.88rem)',color:TEXTE,fontWeight:'600',maxWidth:'110px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{nom}</span>
         </div>
-        <button onClick={()=>router.push('/profil')} style={{background:'none',border:`1.5px solid #ddd`,borderRadius:'8px',padding:'7px 16px',cursor:'pointer',fontSize:'0.82rem',color:'#555',fontFamily:'sans-serif',fontWeight:'600'}}>👤 Mon profil</button>
-        <button onClick={handleDeconnexion} style={{background:'none',border:`1.5px solid #ddd`,borderRadius:'8px',padding:'7px 16px',cursor:'pointer',fontSize:'0.82rem',color:'#888',fontFamily:'sans-serif',fontWeight:'600'}}>Déconnexion</button>
+        <button onClick={()=>router.push('/profil')} style={{background:'none',border:`1.5px solid #ddd`,borderRadius:'8px',padding:'6px clamp(8px,2.5vw,16px)',cursor:'pointer',fontSize:'clamp(0.68rem,2vw,0.82rem)',color:'#555',fontFamily:'sans-serif',fontWeight:'600',whiteSpace:'nowrap'}}>👤 Profil</button>
+        <button onClick={handleDeconnexion} style={{background:'none',border:`1.5px solid #ddd`,borderRadius:'8px',padding:'6px clamp(8px,2.5vw,16px)',cursor:'pointer',fontSize:'clamp(0.68rem,2vw,0.82rem)',color:'#888',fontFamily:'sans-serif',fontWeight:'600',whiteSpace:'nowrap'}}>Déconnexion</button>
       </div>
     </div>
   )
