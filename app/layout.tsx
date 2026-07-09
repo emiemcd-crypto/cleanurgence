@@ -6,6 +6,11 @@ export const metadata: Metadata = {
   description: "Plateforme d'urgence de nettoyage",
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -19,3 +24,4 @@ export default function RootLayout({
     </html>
   );
 }
+ 
