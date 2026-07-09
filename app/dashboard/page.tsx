@@ -136,6 +136,7 @@ export default function Dashboard() {
           </div>
           <span style={{fontSize:'0.88rem',color:TEXTE,fontWeight:'600'}}>{nom}</span>
         </div>
+        <button onClick={()=>router.push('/profil')} style={{background:'none',border:`1.5px solid #ddd`,borderRadius:'8px',padding:'7px 16px',cursor:'pointer',fontSize:'0.82rem',color:'#555',fontFamily:'sans-serif',fontWeight:'600'}}>👤 Mon profil</button>
         <button onClick={handleDeconnexion} style={{background:'none',border:`1.5px solid #ddd`,borderRadius:'8px',padding:'7px 16px',cursor:'pointer',fontSize:'0.82rem',color:'#888',fontFamily:'sans-serif',fontWeight:'600'}}>Déconnexion</button>
       </div>
     </div>
